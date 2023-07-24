@@ -1,0 +1,237 @@
+[training@localhost ~]$ mysql --user=training --password=training
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 36
+Server version: 5.1.66 Source distribution
+
+Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> use mydatabase;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+
+mysql> create table clickstream (userID int, timestamp DATETIME, page char(30));
+
+mysql> create table customer (userID int, name char, email char(30));
+
+mysql> create table purchase (userID int, timestamp DATETIME, amount char(30));
+
+mysql> LOAD DATA LOCAL INFILE
+'/home/training/Desktop/customer_data.csv' INTO TABLE customer FIELDS
+TERMINATED BY ',' LINES TERMINATED BY '\r\n' IGNORE 1 LINES
+(userID,name,email);
+Query OK, 5 rows affected (0.00 sec)
+Records: 5  Deleted: 0  Skipped: 0  Warnings: 0
+
+mysql> LOAD DATA LOCAL INFILE
+'/home/training/Downloads/clickstream_data.csv' INTO TABLE clickstream
+FIELDS TERMINATED BY ',' LINES TERMINATED BY '\r\n' IGNORE 1 LINES
+(userID,timestamp,page);
+Query OK, 13 rows affected, 13 warnings (0.00 sec)
+Records: 13  Deleted: 0  Skipped: 0  Warnings: 0
+
+mysql> LOAD DATA LOCAL INFILE
+'/home/training/Downloads/clickstream_data.csv' INTO TABLE purchase
+FIELDS TERMINATED BY ',' LINES TERMINATED BY '\r\n' IGNORE 1 LINES
+(userID,timestamp,amount);
+Query OK, 5 rows affected
+Records: 5  Deleted: 0  Skipped: 0  Warnings: 0
+
+
+mysql> select * from clickstream;
++--------+---------------------+---------------+
+| userID | timestamp           | page          |
++--------+---------------------+---------------+
+|      1 | 2023-01-01 10:00:00 | homepage      |
+|      1 | 2023-01-01 10:01:00 | product_page  |
+|      2 | 2023-01-01 10:02:00 | homepage      |
+|      2 | 2023-01-01 10:03:00 | cart_page     |
+|      3 | 2023-01-01 10:05:00 | homepage      |
+|      3 | 2023-01-01 10:06:00 | product_page  |
+|      3 | 2023-01-01 10:07:00 | cart_page     |
+|      4 | 2023-01-01 10:09:00 | homepage      |
+|      4 | 2023-01-01 10:10:00 | product_page  |
+|      4 | 2023-01-01 10:11:00 | cart_page     |
+|      4 | 2023-01-01 10:12:00 | checkout_page |
+|      5 | 2023-01-01 10:15:00 | homepage      |
+|      5 | 2023-01-01 10:16:00 | product_page  |
++--------+---------------------+---------------+
+13 rows in set (0.00 sec)
+
+mysql> select * from purchase;
++--------+---------------------+--------+
+| userID | timestamp           | amount |
++--------+---------------------+--------+
+|      1 | 2023-01-01 10:05:00 |    100 |
+|      2 | 2023-01-01 10:08:00 |    150 |
+|      3 | 2023-01-01 10:09:00 |    200 |
+|      4 | 2023-01-01 10:13:00 |    120 |
+|      5 | 2023-01-01 10:17:00 |     80 |
++--------+---------------------+--------+
+5 rows in set (0.00 sec)
+
+mysql> select * from customer;
++--------+----------------+-----------------------------+
+| userID | name           | email                       |
++--------+----------------+-----------------------------+
+|      1 | John Doe       | john.doe@example.com        |
+|      2 | Jane Smith     | jane.smith@example.com      |
+|      3 | Robert Johnson | robert.johnson@example.com  |
+|      4 | Lisa Brown     | lisa.brown@example.com      |
+|      5 | Michael Wilson | michael.wilson@example.com  |
++--------+----------------+-----------------------------+
+5 rows in set (0.00 sec)
+
+mysql> 
+
+[training@localhost ~]$ sqoop import --connect jdbc:mysql://localhost/mydatabase --table purchase --fields-terminated-by '\t' --username training --password training
+23/07/17 14:16:55 WARN tool.BaseSqoopTool: Setting your password on
+the command-line is insecure. Consider using -P instead.
+23/07/17 14:16:55 INFO manager.MySQLManager: Preparing to use a MySQL
+streaming resultset.
+23/07/17 14:16:55 INFO tool.CodeGenTool: Beginning code generation
+23/07/17 14:16:55 INFO manager.SqlManager: Executing SQL statement:
+SELECT t.* FROM `purchase` AS t LIMIT 1
+23/07/17 14:16:55 INFO manager.SqlManager: Executing SQL statement:
+SELECT t.* FROM `purchase` AS t LIMIT 1
+23/07/17 14:16:55 INFO orm.CompilationManager: HADOOP_HOME is /usr/lib/hadoop
+Note: /tmp/sqoop-training/compile/b36deb2aa010f777612e1c7f60126795/purchase.java
+uses or overrides a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+23/07/17 14:16:58 INFO orm.CompilationManager: Writing jar file:
+/tmp/sqoop-training/compile/b36deb2aa010f777612e1c7f60126795/purchase.jar
+23/07/17 14:16:58 WARN manager.MySQLManager: It looks like you are
+importing from mysql.
+23/07/17 14:16:58 WARN manager.MySQLManager: This transfer can be
+faster! Use the --direct
+23/07/17 14:16:58 WARN manager.MySQLManager: option to exercise a
+MySQL-specific fast path.
+23/07/17 14:16:58 INFO manager.MySQLManager: Setting zero DATETIME
+behavior to convertToNull (mysql)
+23/07/17 14:16:58 INFO mapreduce.ImportJobBase: Beginning import of purchase
+23/07/17 14:17:00 WARN mapred.JobClient: Use GenericOptionsParser for
+parsing the arguments. Applications should implement Tool for the
+same.
+23/07/17 14:17:02 INFO db.DataDrivenDBInputFormat: BoundingValsQuery:
+SELECT MIN(`userID`), MAX(`userID`) FROM `purchase`
+23/07/17 14:17:02 INFO mapred.JobClient: Running job: job_202307171011_0005
+23/07/17 14:17:03 INFO mapred.JobClient:  map 0% reduce 0%
+23/07/17 14:17:18 INFO mapred.JobClient:  map 50% reduce 0%
+23/07/17 14:17:26 INFO mapred.JobClient:  map 75% reduce 0%
+23/07/17 14:17:27 INFO mapred.JobClient:  map 100% reduce 0%
+23/07/17 14:17:30 INFO mapred.JobClient: Job complete: job_202307171011_0005
+23/07/17 14:17:30 INFO mapred.JobClient: Counters: 23
+23/07/17 14:17:30 INFO mapred.JobClient:   File System Counters
+23/07/17 14:17:30 INFO mapred.JobClient:     FILE: Number of bytes read=0
+23/07/17 14:17:30 INFO mapred.JobClient:     FILE: Number of bytes
+written=796776
+23/07/17 14:17:30 INFO mapred.JobClient:     FILE: Number of read operations=0
+23/07/17 14:17:30 INFO mapred.JobClient:     FILE: Number of large
+read operations=0
+23/07/17 14:17:30 INFO mapred.JobClient:     FILE: Number of write operations=0
+23/07/17 14:17:30 INFO mapred.JobClient:     HDFS: Number of bytes read=425
+23/07/17 14:17:30 INFO mapred.JobClient:     HDFS: Number of bytes written=139
+23/07/17 14:17:30 INFO mapred.JobClient:     HDFS: Number of read operations=4
+23/07/17 14:17:30 INFO mapred.JobClient:     HDFS: Number of large
+read operations=0
+23/07/17 14:17:30 INFO mapred.JobClient:     HDFS: Number of write operations=4
+23/07/17 14:17:30 INFO mapred.JobClient:   Job Counters
+23/07/17 14:17:30 INFO mapred.JobClient:     Launched map tasks=4
+23/07/17 14:17:30 INFO mapred.JobClient:     Total time spent by all
+maps in occupied slots (ms)=42318
+23/07/17 14:17:30 INFO mapred.JobClient:     Total time spent by all
+reduces in occupied slots (ms)=0
+23/07/17 14:17:30 INFO mapred.JobClient:     Total time spent by all
+maps waiting after reserving slots (ms)=0
+23/07/17 14:17:30 INFO mapred.JobClient:     Total time spent by all
+reduces waiting after reserving slots (ms)=0
+23/07/17 14:17:30 INFO mapred.JobClient:   Map-Reduce Framework
+23/07/17 14:17:30 INFO mapred.JobClient:     Map input records=5
+23/07/17 14:17:30 INFO mapred.JobClient:     Map output records=5
+23/07/17 14:17:30 INFO mapred.JobClient:     Input split bytes=425
+23/07/17 14:17:30 INFO mapred.JobClient:     Spilled Records=0
+23/07/17 14:17:30 INFO mapred.JobClient:     CPU time spent (ms)=6140
+23/07/17 14:17:30 INFO mapred.JobClient:     Physical memory (bytes)
+snapshot=330170368
+23/07/17 14:17:30 INFO mapred.JobClient:     Virtual memory (bytes)
+snapshot=1591345152
+23/07/17 14:17:30 INFO mapred.JobClient:     Total committed heap
+usage (bytes)=254803968
+23/07/17 14:17:30 INFO mapreduce.ImportJobBase: Transferred 0 bytes in
+32.0594 seconds (0 bytes/sec)
+23/07/17 14:17:30 INFO mapreduce.ImportJobBase: Retrieved 5 records.
+
+[training@localhost ~]$ hadoop fs -ls purchase
+Found 6 items
+-rw-r--r--   1 training supergroup          0 2023-07-17 14:17 purchase/_SUCCESS
+drwxr-xr-x   - training supergroup          0 2023-07-17 14:17 purchase/_logs
+-rw-r--r--   1 training supergroup         28 2023-07-17 14:17
+purchase/part-m-00000
+-rw-r--r--   1 training supergroup         28 2023-07-17 14:17
+purchase/part-m-00001
+-rw-r--r--   1 training supergroup         28 2023-07-17 14:17
+purchase/part-m-00002
+-rw-r--r--   1 training supergroup         55 2023-07-17 14:17
+purchase/part-m-00003
+[training@localhost ~]$ hadoop fs -cat purchase/part-m-00000
+1       2023-01-01 10:05:00.0   100
+[training@localhost ~]$ hadoop fs -cat purchase/part-m-00003
+4       2023-01-01 10:13:00.0   120
+5       2023-01-01 10:17:00.0   80
+[training@localhost ~]$ hadoop fs -cat purchase/part-m-00001
+2       2023-01-01 10:08:00.0   150
+[training@localhost ~]$ hadoop fs -cat purchase/part-m-00002
+3       2023-01-01 10:09:00.0   200
+
+
+[training@localhost ~]$ sqoop import --connect jdbc:mysql://localhost/mydatabase --table clickstream --fields-terminated-by '\t' --username training --password training
+[training@localhost ~]$ hadoop fs -ls clickstream
+Found 3 items
+-rw-r--r--   1 training supergroup          0 2023-07-17 13:36
+clickstream/_SUCCESS
+drwxr-xr-x   - training supergroup          0 2023-07-17 13:36 clickstream/_logs
+-rw-r--r--   1 training supergroup        454 2023-07-17 13:36
+clickstream/part-m-00000
+[training@localhost ~]$ hadoop fs -cat clickstream/part-m-00000
+1,2023-01-01 10:00:00.0,homepage
+1,2023-01-01 10:01:00.0,product_page
+2,2023-01-01 10:02:00.0,homepage
+2,2023-01-01 10:03:00.0,cart_page
+3,2023-01-01 10:05:00.0,homepage
+3,2023-01-01 10:06:00.0,product_page
+3,2023-01-01 10:07:00.0,cart_page
+4,2023-01-01 10:09:00.0,homepage
+4,2023-01-01 10:10:00.0,product_page
+4,2023-01-01 10:11:00.0,cart_page
+4,2023-01-01 10:12:00.0,checkout_page
+5,2023-01-01 10:15:00.0,homepage
+5,2023-01-01 10:16:00.0,product_page
+
+
+[training@localhost ~]$ sqoop import --connect jdbc:mysql://localhost/mydatabase --table customer --fields-terminated-by '\t' --username training --password training
+[training@localhost ~]$ hadoop fs -ls customer
+Found 6 items
+-rw-r--r--   1 training supergroup          0 2023-07-17 12:23 customer/_SUCCESS
+drwxr-xr-x   - training supergroup          0 2023-07-17 12:23 customer/_logs
+-rw-r--r--   1 training supergroup         32 2023-07-17 12:23
+customer/part-m-00000
+-rw-r--r--   1 training supergroup         36 2023-07-17 12:23
+customer/part-m-00001
+-rw-r--r--   1 training supergroup         44 2023-07-17 12:23
+customer/part-m-00002
+-rw-r--r--   1 training supergroup         81 2023-07-17 12:23
+customer/part-m-00003
+[training@localhost ~]$ hadoop fs -cat customer/part-m-00000
+1       John Doe        john.doe@example.com
+[training@localhost ~]$ hadoop fs -cat customer/part-m-00001
+2       Jane Smith      jane.smith@example.com
+[training@localhost ~]$ hadoop fs -cat customer/part-m-00003
+4       Lisa Brown      lisa.brown@example.com
+5       Michael Wilson  michael.wilson@example.com
+
