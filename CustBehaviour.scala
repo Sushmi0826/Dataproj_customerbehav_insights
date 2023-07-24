@@ -32,8 +32,6 @@ object CustBehaviour extends Serializable{
       functions.split(col("userID,timestamp,page"), ",").getItem(1).as("timestamp"),
       functions.split(col("userID,timestamp,page"), ",").getItem(2).as("page"))
     click.show()
-    customer.createOrReplaceTempView("customer1")
-    purchase.createOrReplaceTempView("purchase1")
     val joinedDF = customer.join(purchase, Seq("userID"), joinType = "Inner")
     joinedDF.show()
     val purchase_df = purchase.withColumn("date", to_date(col("timestamp")))
